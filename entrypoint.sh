@@ -37,6 +37,9 @@ else
     fi
 fi
 
+#store ssh private key
+echo $INPUT_SSH_KEY | python3 -m base64 -d >/tmp/id_rsa
+
 if ! gcloud auth login --cred-file=/tmp/key.json --quiet; then
     echo "Unable to login to gcloud. Exiting ..."
     exit 1
@@ -73,9 +76,9 @@ else
         done
     fi
 
-    echo "docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME --ssh github_ssh_key=~/.ssh/id_rsa $FILE_ARG $INPUT_CONTEXT"
+    echo "docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME --ssh github_ssh_key=*** $FILE_ARG $INPUT_CONTEXT"
 
-    if docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME --ssh github_ssh_key=~/.ssh/id_rsa $FILE_ARG $INPUT_CONTEXT; then
+    if docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME --ssh github_ssh_key=/tmp/id_rsa $FILE_ARG $INPUT_CONTEXT; then
         echo "Image built ..."
     else
         echo "Image building failed. Exiting ..."
