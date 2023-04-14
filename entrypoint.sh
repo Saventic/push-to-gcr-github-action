@@ -74,8 +74,8 @@ else
         done
     fi
 
-    if [ "$INPUT_SSH_KEY" -gt 10 ]; then
-        #store ssh private key
+    if [ -z $INPUT_SSH_KEY ]; then
+        echo "Build docker image using provided SSH private key"
         echo $INPUT_SSH_KEY | python3 -m base64 -d >/tmp/id_rsa
         echo "docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME --ssh $INPUT_SSH_KEY_NAME=/tmp/id_rsa $FILE_ARG $INPUT_CONTEXT"
         if docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME --ssh $INPUT_SSH_KEY_NAME=/tmp/id_rsa $FILE_ARG $INPUT_CONTEXT; then
