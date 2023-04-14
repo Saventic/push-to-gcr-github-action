@@ -47,6 +47,10 @@ inputs:
     description: Provide base64 encoded ssh key
     required: false
     default: false
+  ssh_key_name:
+    description: Ssh key name passed to docker build command
+    required: false
+    default: 'default'
 runs:
   using: docker
   image: docker://saventic/push-to-gcr-github-action:latest

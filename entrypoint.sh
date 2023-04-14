@@ -6,7 +6,7 @@
 #version        :2.0.1
 #usage          :./entrypoint.sh
 #notes          :Required env values are: INPUT_REGISTRY,INPUT_PROJECT_ID,INPUT_IMAGE_NAME
-#                Optional env values are: INPUT_GCLOUD_SERVICE_KEY,INPUT_IMAGE_TAG,INPUT_DOCKERFILE,INPUT_TARGET,INPUT_CONTEXT,INPUT_BUILD_ARGS,SSH_KEY
+#                Optional env values are: INPUT_GCLOUD_SERVICE_KEY,INPUT_IMAGE_TAG,INPUT_DOCKERFILE,INPUT_TARGET,INPUT_CONTEXT,INPUT_BUILD_ARGS,SSH_KEY,SSH_KEY_NAME
 #bash_version   :5.0.17(1)-release
 ###################################################
 
@@ -37,8 +37,6 @@ else
     fi
 fi
 
-#store ssh private key
-echo $INPUT_SSH_KEY | python3 -m base64 -d >/tmp/id_rsa
 
 if ! gcloud auth login --cred-file=/tmp/key.json --quiet; then
     echo "Unable to login to gcloud. Exiting ..."
@@ -76,14 +74,26 @@ else
         done
     fi
 
-    echo "docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME --ssh github_ssh_key=*** $FILE_ARG $INPUT_CONTEXT"
-
-    if docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME --ssh github_ssh_key=/tmp/id_rsa $FILE_ARG $INPUT_CONTEXT; then
-        echo "Image built ..."
+    if [ "$INPUT_SSH_KEY" -gt 10 ]; then
+        #store ssh private key
+        echo $INPUT_SSH_KEY | python3 -m base64 -d >/tmp/id_rsa
+        echo "docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME --ssh $INPUT_SSH_KEY_NAME=/tmp/id_rsa $FILE_ARG $INPUT_CONTEXT"
+        if docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME --ssh $INPUT_SSH_KEY_NAME=/tmp/id_rsa $FILE_ARG $INPUT_CONTEXT; then
+            echo "Image built ..."
+        else
+            echo "Image building failed. Exiting ..."
+            exit 1
+        fi
     else
-        echo "Image building failed. Exiting ..."
-        exit 1
+        echo "docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME $FILE_ARG $INPUT_CONTEXT"
+        if docker build $BUILD_PARAMS $TARGET_ARG -t $TEMP_IMAGE_NAME $FILE_ARG $INPUT_CONTEXT; then
+            echo "Image built ..."
+        else
+            echo "Image building failed. Exiting ..."
+            exit 1
+        fi
     fi
+
 fi
 
 for IMAGE_TAG in ${ALL_IMAGE_TAG[@]}; do
